@@ -1,24 +1,19 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.vector_ar.vecm import VECM, select_order, select_coint_rank
+from utils import read_process_csv
 
-if __name__ == "__main__":
-    df = pd.read_csv("gold_monthly_prices.csv")
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-    df = df.set_index("Timestamp")
-    # Drop the $ from the monthly gold price, we know it is dollars per ounce
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].str.replace('$', '')
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].str.replace(',', '')
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].astype("float64")
-    df = df.sort_index()
+def model_gold(filename: str, colname: str):
+    df = read_process_csv(filename, colname)
 
     model = ExponentialSmoothing(
-        df['MonthlyGoldPrice'],
-        trend='mul',  # Multiplicative trend
-        seasonal='add', # Multiplicative seasonality
-        seasonal_periods=12 # 12 months in a year
+    df['MonthlyGoldPrice'],
+    trend='mul',  # Multiplicative trend
+    seasonal='add', # Multiplicative seasonality
+    seasonal_periods=12 # 12 months in a year
     )
 
     # Fit the model to the data
@@ -48,8 +43,8 @@ if __name__ == "__main__":
     df['log_data'] = np.log(df['MonthlyGoldPrice'])
 
     model2 = SARIMAX(df['log_data'],
-                    order=(1, 1, 1),
-                    seasonal_order=(1, 1, 1, 12))
+                     order=(1, 1, 1),
+                     seasonal_order=(1, 1, 1, 12))
     results = model2.fit()
 
     # Print model summary to check p-values and AIC
@@ -101,3 +96,51 @@ if __name__ == "__main__":
     plt.ylabel('Values')
     plt.legend()
     plt.show()
+
+def model_gold_silver(filename_gold: str, colname_gold: str, filename_silver: str, colname_silver: str):
+    """
+    Acc to gold_silver_comovement.py, model gold and silver using VECM (vector error correction model)
+    :param filename_gold:
+    :param colname_gold:
+    :param filename_silver:
+    :param colname_silver:
+    :return:
+    """
+    print("Modelling gold and silver now...")
+    df_gold = read_process_csv(filename_gold, colname_gold)
+    df_silver = read_process_csv(filename_silver, colname_silver)
+    x = df_gold['MonthlyGoldPrice'].to_numpy()
+    y = df_silver['MonthlySilverPrice'].to_numpy()
+    df = pd.DataFrame({'Series_Gold': x, 'Series_Silver': y})
+    # Assuming df contains two non-stationary (I(1)) cointegrated series
+    # Find optimal lag order for the underlying VAR
+    lag_selection = select_order(data=df, maxlags=10, deterministic="ci")
+    print(lag_selection.summary())
+
+    # Use the AIC-recommended lag order
+    opt_lag = lag_selection.aic
+
+    # Test for cointegration rank (r)
+    rank_test = select_coint_rank(df, det_order=0, k_ar_diff=opt_lag, method="trace")
+    print(rank_test.summary())
+
+    # r_0 = 1 suggests one cointegrating relationship
+    coint_rank = rank_test.rank
+
+    # Fit the VECM
+    # k_ar_diff is the number of lags in the VECM (level lags - 1)
+    model = VECM(df, k_ar_diff=opt_lag, coint_rank=coint_rank, deterministic="ci")
+    vecm_res = model.fit()
+
+    print(vecm_res.summary())
+    # Coefficients are statistically significant (p values small)
+
+    # Forecast the next 10 steps
+    forecast = vecm_res.predict(steps=10)
+    print("VECM forecast for next 10 months for gold and silver:")
+    print(forecast)
+
+if __name__ == "__main__":
+    model_gold("gold_monthly_prices.csv", "MonthlyGoldPrice")
+    model_gold_silver("gold_monthly_prices.csv", "MonthlyGoldPrice",
+                      "silver_monthly_px.csv", "MonthlySilverPrice")

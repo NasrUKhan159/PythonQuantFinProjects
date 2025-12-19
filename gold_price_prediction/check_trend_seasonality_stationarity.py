@@ -1,12 +1,14 @@
 # Monthly data from 1 Jan 2011 to 1 Dec 2025. Check for trend, seasonality and stationarity. If data non stationary with
 # trend but no seasonality, ARIMA but if data non stationary with trend and seasonality,
 # use SARIMA. Else, try Prophet, TBATS, SARIMAX, ML/DL models
-# Data source: https://www.macrotrends.net/1333/historical-gold-prices-100-year-chart
+# Data source for gold: https://www.macrotrends.net/1333/historical-gold-prices-100-year-chart
+# Data source for silver: https://www.macrotrends.net/1470/historical-silver-prices-100-year-chart
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller
+from utils import read_process_csv
 
 def check_trend_seasonality(timeseries, period):
     """
@@ -62,13 +64,7 @@ def check_stationarity(timeseries):
             "\nConclusion: The p-value is greater than or equal to 0.05. We fail to reject the null hypothesis (H0) and conclude the time series is non-stationary (it has a unit root).")
 
 if __name__ == "__main__":
-    df = pd.read_csv("gold_monthly_prices.csv")
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-    df = df.set_index("Timestamp")
-    # Drop the $ from the monthly gold price, we know it is dollars per ounce
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].str.replace('$', '')
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].str.replace(',', '')
-    df['MonthlyGoldPrice'] = df['MonthlyGoldPrice'].astype("float64")
+    df = read_process_csv("gold_monthly_prices.csv", "MonthlyGoldPrice")
     # 2. Check for Trend and Seasonality
     # Period is 12 for monthly data
     check_trend_seasonality(df['MonthlyGoldPrice'], period=12)
