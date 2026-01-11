@@ -4,7 +4,7 @@ Financial data needed: exchange rates, KSE-100 levels, interest spreads, interba
 - Exchange rates: USDPKR spot data (daily or monthly) (Source: https://www.investing.com/currencies/usd-pkr-historical-data)
 - Nominal effective exchange rate (daily or monthly) from https://easydata.sbp.org.pk/apex/f?p=10:211:7724461877834::NO:::
 (NEER data is always end of month)
-- Exchange market pressure (this is a theoretical measure which would need to be computed in the following manner:
+- Exchange market pressure (this is a theoretical measure which would need to be computed in the following manner):
 Understanding Exchange Market Pressure
 The EMP index is a theoretical measure, generally defined as the sum of two components, which are weighted to reflect the degree of central bank intervention in a managed exchange rate system: 
 Change in the nominal exchange rate (depreciation/appreciation)
@@ -41,3 +41,14 @@ Political data needed: indicators of political instability.
 
 Purpose of the stress index: Offer early warnings for crises, by modelling it across time and finding patterns in it.
 If we have monthly and daily data, we can construct a monthly variable out of daily data using an average value across days in a month for the daily variable, such that our dataset just has monthly data.
+
+The 
+We want 2 time series from the interbank spreads data:
+1. Series Display Name = "Weighted Average Lending Deposit Rates  Lending Marginal (Overall)"
+2. Series Display Name = "Weighted Average Lending Deposit Rates  Lending Marginal (Stocks)"
+The differences between the "Overall" and the "Stocks" is timing of the loans being measured. "Overall"
+measures the weighted average lending rate for new loans issued over a certain period such as a month for monthly data.
+"Overall" reflects the current market conditions and immediate impact of recent monetary policy changes on new borrowers.
+As a result, it is more volatile since it ignores existing loans in previous months/years. "Stocks" represents the weighted lending rate
+for the entire portfolio of existing loans, and reflects actual interest income banks are earning from their loan book.
+As a result, it is more stable and more sluggish to respond to monetary policy changes (unlike "Overall" which is weighted by new loan volume, it is weighted by total outstanding balance)
