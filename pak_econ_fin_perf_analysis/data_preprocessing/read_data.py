@@ -72,7 +72,7 @@ def read_datasets(fx_reserves_file: str, inflation_data_file: str,
 
     # Merge them all on the 'Date' column
     df_merged = reduce(lambda left, right: pd.merge(left, right, on='Date', how='inner'), dfs)
-    print(2)
+    return df_merged
 
 
 if __name__ == "__main__":
@@ -86,6 +86,6 @@ if __name__ == "__main__":
     sbp_benchmark_rates_file = "SBP_BenchmarkInterestRate.xlsx"
     trade_balances_file = "trade_balance_data.xlsx"
     usdpkr_spot_file = "USDPKR_SpotRates.xlsx"
-    read_datasets(fx_reserves_file, inflation_data_file, interest_rate_spreads_file, kse100_file,
+    df_merged = read_datasets(fx_reserves_file, inflation_data_file, interest_rate_spreads_file, kse100_file,
                   nom_effective_xr_file, npl_file, remittances_file, sbp_benchmark_rates_file,
                   trade_balances_file, usdpkr_spot_file)
